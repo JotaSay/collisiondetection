@@ -5,6 +5,13 @@ using UnityEngine;
 
 public class PrismManager : MonoBehaviour
 {
+    public struct Edge
+    {
+        double distance;
+        Vector3 normal;
+        int index;
+    }
+
     public int prismCount = 10;
     public float prismRegionRadiusXZ = 5;
     public float prismRegionRadiusY = 5;
@@ -168,6 +175,14 @@ public class PrismManager : MonoBehaviour
                             direction = acPerp;
                         } else{
                             ans = true;
+
+                            List<Vector3> s = simplex;
+                            while (true)
+                            {
+                                Edge closest = ClosestEdge(s);
+
+                            }
+
                             break;
                         }
                     }
@@ -186,6 +201,20 @@ public class PrismManager : MonoBehaviour
         collision.penetrationDepthVectorAB = Vector3.zero;
         print(ans);
         return ans;
+    }
+
+    private Edge ClosestEdge(List<Vector3> simplex)
+    {
+        Edge e;
+        e.distance = 9999999.99;
+        for (int i = 0; i < 3; i++)
+        {
+            int j = i + 1;
+            Vector3 a = simplex[i];
+            Vector3 b = simplex[j];
+            Vector3 e = b - a;
+            Vector3 oa = a;
+        }
     }
 
     private Vector3 getSupportPoint(Vector3[] vertices, Vector3 d)
