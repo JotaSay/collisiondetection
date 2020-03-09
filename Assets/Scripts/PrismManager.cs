@@ -5,13 +5,6 @@ using UnityEngine;
 
 public class PrismManager : MonoBehaviour
 {
-    public struct Edge
-    {
-        double distance;
-        Vector3 normal;
-        int index;
-    }
-
     public int prismCount = 10;
     public float prismRegionRadiusXZ = 5;
     public float prismRegionRadiusY = 5;
@@ -116,17 +109,64 @@ public class PrismManager : MonoBehaviour
 
     private IEnumerable<PrismCollision> PotentialCollisions()
     {
-        for (int i = 0; i < prisms.Count; i++) {
-            for (int j = i + 1; j < prisms.Count; j++) {
-                var checkPrisms = new PrismCollision();
-                checkPrisms.a = prisms[i];
-                checkPrisms.b = prisms[j];
+        List < belonger > meep = new List<belonger>();
+        for (int i = 0; i < prisms.Count; i++)
+        {
+            belonger minx = new belonger();
+            belonger maxx = new belonger();
+            minx.xval = prisms[i].points.Min(point => point.x);
+            maxx.xval = prisms[i].points.Max(point => point.x);
+            maxx.max = true;
+            minx.max = false;
+            Debug.Log("these are our generated x vals" + minx.xval + ' ' + maxx.xval);
+            minx.p = maxx.p = prisms[i];
+            meep.Add(minx);
+            meep.Add(maxx);
+        }
+        foreach (belonger b in meep)
+        {
+            Debug.Log("this is supposed to be the list" + b.xval + "this is if its max" + b.max);
 
-                yield return checkPrisms;
+        }
+
+        meep.Sort(delegate (belonger x, belonger y) {return x.xval.CompareTo(y.xval);});
+        foreach (belonger b in meep)
+        {
+            Debug.Log("this is supposed to be the sorted list entry" + b.xval + "this is if its max" + b.max);
+        }
+
+        Debug.Log("This is supposed to be the ordered list" + meep);
+        List < Prism > activelist = new List<Prism>();
+        foreach (belonger b in meep)
+        {       
+        if (b.max == false)
+                    {
+        foreach (Prism p in activelist)
+                {
+                    var checkPrisms = new PrismCollision();
+                    checkPrisms.a = p;
+                    checkPrisms.b = b.p;
+                    yield return checkPrisms;
+
+                }
+
+                activelist.Add(b.p);
+
+
+            }
+            else
+            {
+                activelist.Remove(b.p);
             }
         }
 
         yield break;
+    }
+    private class belonger
+    {
+        public float xval;
+        public bool max;
+        public Prism p;
     }
 
     private bool CheckCollision(PrismCollision collision)
@@ -175,14 +215,6 @@ public class PrismManager : MonoBehaviour
                             direction = acPerp;
                         } else{
                             ans = true;
-
-                            List<Vector3> s = simplex;
-                            while (true)
-                            {
-                                Edge closest = ClosestEdge(s);
-
-                            }
-
                             break;
                         }
                     }
@@ -197,24 +229,55 @@ public class PrismManager : MonoBehaviour
                 }
             }
         }
-        
-        collision.penetrationDepthVectorAB = Vector3.zero;
-        print(ans);
-        return ans;
-    }
 
-    private Edge ClosestEdge(List<Vector3> simplex)
-    {
-        Edge e;
-        e.distance = 9999999.99;
-        for (int i = 0; i < 3; i++)
+        Vector3 normal = Vector3.zero;
+        float depth = 0f;
+        float closestDist;
+        Vector3 closestNormal;
+        int closestIndex;
+        while (true)
         {
-            int j = i + 1;
-            Vector3 a = simplex[i];
-            Vector3 b = simplex[j];
-            Vector3 e = b - a;
-            Vector3 oa = a;
+            closestDist = 1000000000000f;
+            closestNormal = Vector3.zero;
+            closestIndex = -1;
+
+            for (int i = 0; i < simplex.Count; i++)
+            {      
+                int j = i + 1 == simplex.Count ? 0 : i + 1;
+                a = simplex[i];
+                b = simplex[j];
+                c = b - a;
+                ab = a * Vector3.Dot(c, c) - c * Vector3.Dot(c, a);
+                /*print(a);
+                print(b);
+                print(c);
+                print(ab);*/
+                Vector3.Normalize(ab);
+                float d = Vector3.Dot(ab, a);
+                if (d < closestDist)
+                {
+                    closestDist = d;
+                    closestNormal = ab;
+                    closestIndex = j;
+                }
+            }
+            //print(simplex.Count);
+            Vector3 p = getSupportVector(collision, closestNormal);
+            float ds = Vector3.Dot(p, closestNormal);
+            if (ds - closestDist < 0.5)
+            {
+                normal = closestNormal;
+                depth = ds;
+                break;
+            }
+            else
+            {
+                simplex.Insert(closestIndex, p);
+            }
         }
+        print(depth);
+        collision.penetrationDepthVectorAB = normal * 2*(1/1-depth);
+        return ans;
     }
 
     private Vector3 getSupportPoint(Vector3[] vertices, Vector3 d)
@@ -251,14 +314,13 @@ public class PrismManager : MonoBehaviour
     #endregion
 
     #region Private Functions
-    
     private void ResolveCollision(PrismCollision collision)
     {
         var prismObjA = collision.a.prismObject;
         var prismObjB = collision.b.prismObject;
 
-        var pushA = -collision.penetrationDepthVectorAB / 2;
-        var pushB = collision.penetrationDepthVectorAB / 2;
+        var pushA = -collision.penetrationDepthVectorAB;
+        var pushB = collision.penetrationDepthVectorAB;
 
         for (int i = 0; i < collision.a.pointCount; i++)
         {
@@ -273,7 +335,8 @@ public class PrismManager : MonoBehaviour
 
         Debug.DrawLine(prismObjA.transform.position, prismObjA.transform.position + collision.penetrationDepthVectorAB, Color.cyan, UPDATE_RATE);
     }
-    
+
+
     #endregion
 
     #region Visualization Functions

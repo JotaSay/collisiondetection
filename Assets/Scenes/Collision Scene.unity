@@ -323,10 +323,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27f617c0ea9733b44b50c37923d5c7d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prismCount: 2
-  prismRegionRadiusXZ: 1
+  prismCount: 10
+  prismRegionRadiusXZ: 5
   prismRegionRadiusY: 0
-  maxPrismScaleXZ: 5
+  maxPrismScaleXZ: 3
   maxPrismScaleY: 0
   regularPrismPrefab: {fileID: 6468098775448787195, guid: 04d1cda6b2b9eb64b92c80bdaa0756a4,
     type: 3}
