@@ -126,11 +126,97 @@ public class PrismManager : MonoBehaviour
     {
         var prismA = collision.a;
         var prismB = collision.b;
-
+        Vector3 a, b, c, ab, ac, ao, abPerp, acPerp;
+        bool ans = false;
+        List<Vector3> simplex = new List<Vector3>();
+        Vector3 direction = new Vector3(1,1,1);
+        simplex.Add(getSupportVector(collision, direction));
+        direction = -direction;
+        while(true)
+        {  
+            simplex.Add(getSupportVector(collision , direction));
+            if (Vector3.Dot(simplex.Last(), direction) < 0)
+            {
+                //print(Vector3.Dot(simplex.Last(), direction));
+                ans = false;
+                break;
+            }               
+            else
+            {
+                a = simplex.Last();
+                ao = -a;
+                if (simplex.Count == 3) 
+                {
+                    b = simplex[1];
+                    c = simplex[0];
+                    ab = b - a;
+                    ac = c - a;
+                    //AxBxC = B(C.dot(A)) – A(C.dot(B))
+                    //tripleProduct(ac, ab, ab);
+                    //tripleProduct(ab, ac, ac)
+                    abPerp = ab * Vector3.Dot(ab, ac) - ac * Vector3.Dot(ab, ab);
+                    acPerp = ac * Vector3.Dot(ac, ab) - ab * Vector3.Dot(ac, ac);
+                    if (Vector3.Dot(abPerp, ao) > 0) 
+                    {
+                        simplex.Remove(c);
+                        direction = abPerp;
+                    } 
+                    else 
+                    {
+                        if (Vector3.Dot(acPerp, ao) > 0) {
+                            simplex.Remove(b);
+                            direction = acPerp;
+                        } else{
+                            ans = true;
+                            break;
+                        }
+                    }
+                } 
+                else 
+                {
+                    b = simplex[1];
+                    ab = b - a;
+                    //abPerp = tripleProduct(ab, ao, ab);
+                    abPerp = ao * Vector3.Dot(ab, ab) - ab * Vector3.Dot(ab, ao);
+                    direction = abPerp;
+                }
+            }
+        }
         
         collision.penetrationDepthVectorAB = Vector3.zero;
+        print(ans);
+        return ans;
+    }
 
-        return true;
+    private Vector3 getSupportPoint(Vector3[] vertices, Vector3 d)
+    {
+        float highest = -9999999999999999999f;
+        Vector3 support = new Vector3(0,0,0);
+        //Vector3 support = new Vector3(0f, 0f, 0f);
+        for (int i=0; i< vertices.Length; i++)
+        {
+            Vector3 v = vertices[i];
+            float dotProduct = Vector3.Dot(v, d);
+            //print(highest);
+            if(highest < dotProduct)
+            {
+                highest = dotProduct;
+                support = v;
+            }
+        }
+        return support;
+    }
+
+    private Vector3 getSupportVector(PrismCollision collision, Vector3 d)
+    {
+        var prismA = collision.a;
+        var prismB = collision.b;
+        Vector3 aPoint = getSupportPoint(prismA.points, d);
+        Vector3 bPoint = getSupportPoint(prismB.points, -d);
+        //print(aPoint);
+        //print(bPoint);
+        //return the minkowski point
+        return aPoint - bPoint;
     }
     
     #endregion
