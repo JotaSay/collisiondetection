@@ -145,8 +145,16 @@ public class PrismManager : MonoBehaviour
         var pushA = -collision.penetrationDepthVectorAB / 2;
         var pushB = collision.penetrationDepthVectorAB / 2;
 
-        prismObjA.transform.position += pushA;
-        prismObjB.transform.position += pushB;
+        for (int i = 0; i < collision.a.pointCount; i++)
+        {
+            collision.a.points[i] += pushA;
+        }
+        for (int i = 0; i < collision.b.pointCount; i++)
+        {
+            collision.b.points[i] += pushB;
+        }
+        //prismObjA.transform.position += pushA;
+        //prismObjB.transform.position += pushB;
 
         Debug.DrawLine(prismObjA.transform.position, prismObjA.transform.position + collision.penetrationDepthVectorAB, Color.cyan, UPDATE_RATE);
     }
